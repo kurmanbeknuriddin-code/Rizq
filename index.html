@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Ризк</title>
-<meta name="theme-color" content="#1f3e2d">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ризк">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -16,29 +16,17 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_balance,account_balance_wallet,add,arrow_back,arrow_drop_down,arrow_forward,attach_money,attractions,bakery_dining,bar_chart,beach_access,bed,block,bolt,brush,business_center,calculate,calendar_month,car_repair,casino,category,celebration,chair,check,checkroom,chevron_left,chevron_right,child_care,cleaning_services,close,construction,content_cut,credit_card,currency_exchange,delete,dentistry,diamond,directions_boat,directions_bus,directions_car,download,dry_cleaning,edit,egg,electric_scooter,euro,ev_station,event_repeat,expand_more,face,fact_check,family_restroom,fastfood,favorite,fitness_center,flight,functions,groups,handshake,headphones,healing,help,home,icecream,kitchen,laptop,liquor,local_activity,local_atm,local_bar,local_cafe,local_fire_department,local_gas_station,local_hospital,local_parking,local_pizza,local_shipping,local_taxi,lunch_dining,medical_services,medication,menu,monitor_heart,monitoring,more_horiz,mosque,movie,music_note,nightlife,notifications,nutrition,park,payments,pedal_bike,percent,person,pets,photo_camera,plumbing,price_check,psychology,ramen_dining,receipt_long,redeem,remove,replay,request_quote,restaurant,savings,school,search,sell,settings,shopping_bag,shopping_basket,shopping_cart,smartphone,soap,spa,sports_esports,sports_soccer,star,store,styler,sync_alt,tag,theaters,toys,train,tram,trending_down,trending_up,two_wheeler,undo,vaccines,visibility,volunteer_activism,wash,watch,water_drop,wifi,wine_bar,work,yard&display=block">
 <style>
-/* Layout: phone-first single column, max 520px; deep-green rounded header per screen, cards on a green-black ground, yellow FAB and primary buttons */
+/* Layout: phone-first single column, max 520px; airy white header with the balance, white cards on a soft lavender-grey ground; violet accent, coral and teal for money. Light only, by request */
 :root{
-  --bg:#ecf1ed; --surface:#ffffff; --surface2:#f1f6f2; --fg:#14231a; --muted:#5d6f64; --line:#d9e3dc; --ring:#e2e9e4;
-  --head:#2b664a; --head-ink:#f3f8f4; --head-muted:#b5d4c2;
-  --accent:#f2b636; --accent-ink:#2b1f00; --green:#24945a; --tag:#2f9d5c; --tag-ink:#ffffff;
-  --exp:#d14343; --inc:#22914f; --c-inc:#2fa463; --c-exp:#f0b02e; --c-pr:#3b7fe0;
-  --scrim:rgba(8,18,12,.5); --shadow:0 1px 2px rgba(15,35,24,.06),0 6px 18px rgba(15,35,24,.07);
+  --bg:#f4f5fa; --surface:#ffffff; --surface2:#f1f2f8; --fg:#1d1f2c; --muted:#747a8f; --line:#e7e8f0; --ring:#eef0f6;
+  --head:#ffffff; --head-ink:#1d1f2c; --head-muted:#8b90a5;
+  --accent:#6c5ce7; --accent-ink:#ffffff; --green:#6c5ce7; --tag:#efecff; --tag-ink:#5443d6;
+  --exp:#e5484d; --inc:#12a594; --warn:#f59e0b; --c-inc:#12b5a5; --c-exp:#ff7a59; --c-pr:#6c5ce7;
+  --scrim:rgba(20,22,40,.35); --shadow:0 1px 2px rgba(30,32,60,.04),0 8px 24px rgba(30,32,60,.06);
   --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-num:"Unbounded","Manrope",system-ui,sans-serif;
+  --f-num:"Manrope",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0e1712; --surface:#17241c; --surface2:#1f3026; --fg:#e6efe9; --muted:#93a89b; --line:#263a2e; --ring:#22352a;
-  --head:#1f3e2d; --head-ink:#eef6f0; --head-muted:#9cc2ad;
-  --accent:#f2b636; --accent-ink:#2b1f00; --green:#5fd08f; --tag:#2f8f55; --tag-ink:#effaf3;
-  --exp:#ff7b6b; --inc:#5fd08f; --c-inc:#4cc07d; --c-exp:#f2b636; --c-pr:#5b97f0;
-  --scrim:rgba(0,0,0,.62); --shadow:0 1px 2px rgba(0,0,0,.35); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0e1712; --surface:#17241c; --surface2:#1f3026; --fg:#e6efe9; --muted:#93a89b; --line:#263a2e; --ring:#22352a;
-  --head:#1f3e2d; --head-ink:#eef6f0; --head-muted:#9cc2ad;
-  --accent:#f2b636; --accent-ink:#2b1f00; --green:#5fd08f; --tag:#2f8f55; --tag-ink:#effaf3;
-  --exp:#ff7b6b; --inc:#5fd08f; --c-inc:#4cc07d; --c-exp:#f2b636; --c-pr:#5b97f0;
-  --scrim:rgba(0,0,0,.62); --shadow:0 1px 2px rgba(0,0,0,.35); color-scheme:dark}
-
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
 input{font:inherit;color:inherit}
@@ -49,23 +37,23 @@ input{font:inherit;color:inherit}
 #view{max-width:520px;margin:0 auto;min-height:100vh}
 
 /* header */
-.bar{background:var(--head);color:var(--head-ink);border-radius:0 0 24px 24px}
+.bar{background:var(--head);color:var(--head-ink);border-radius:0 0 26px 26px;box-shadow:0 1px 0 var(--line),0 10px 30px rgba(30,32,60,.05)}
 .bar .in{padding-block:8px 0;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
 .toprow{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:6px;min-height:52px}
 .ib{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--head-ink)}
-.ib:active{background:rgba(255,255,255,.1)}
+.ib:active{background:var(--surface2)}
 .ib.ph{visibility:hidden}
 .ttl{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;padding-block:4px 10px}
 .ttl small{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--head-muted)}
-.ttl b{font-family:var(--f-num);font-weight:600;font-size:22px}
+.ttl b{font-family:var(--f-num);font-weight:800;font-size:22px;letter-spacing:-.01em}
 .ttl .t1{font-family:var(--f-body);font-size:17px;font-weight:700;padding-top:6px}
-.bal{font-family:var(--f-num);font-weight:600;font-size:clamp(22px,6.6vw,28px);line-height:1.2;word-break:break-word}
+.bal{font-family:var(--f-num);font-weight:800;letter-spacing:-.02em;font-size:clamp(22px,6.6vw,28px);line-height:1.2;word-break:break-word}
 .accsel{display:inline-flex;align-items:center;gap:4px;color:var(--head-muted);font-weight:700;font-size:14px;padding:4px 8px;border-radius:10px}
-.ktabs{display:grid;grid-template-columns:1fr 1fr;padding:0 12px}
+.ktabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 12px 12px;padding:4px;background:var(--surface2);border-radius:14px}
 .ktabs.three{grid-template-columns:1fr 1fr 1fr}
-.ktabs button{padding:10px 4px 12px;font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--head-muted);position:relative}
-.ktabs button[aria-pressed="true"]{color:var(--head-ink)}
-.ktabs button[aria-pressed="true"]::after{content:"";position:absolute;left:22%;right:22%;bottom:6px;height:3px;border-radius:2px;background:var(--head-ink)}
+.ktabs button{padding:9px 4px;font-weight:700;font-size:14px;color:var(--head-muted);border-radius:10px}
+.ktabs button[aria-pressed="true"]{color:var(--head-ink);background:var(--surface);box-shadow:0 1px 3px rgba(30,32,60,.1)}
+
 
 .page{display:flex;flex-direction:column;gap:12px;padding-block:14px 110px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
 .page.form{gap:16px;padding-bottom:40px}
@@ -93,9 +81,9 @@ input{font:inherit;color:inherit}
 /* donut */
 .donut{position:relative;display:grid;place-items:center;padding:6px 16px 12px}
 .donut svg{width:min(230px,62vw);height:auto}
-.dtot{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-num);font-weight:600;font-size:clamp(17px,5vw,21px);pointer-events:none;padding:0 30%;text-align:center}
-.fab{position:absolute;right:16px;bottom:14px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
-.fab .mi{font-size:30px;font-variation-settings:"FILL" 1,"wght" 600,"GRAD" 0,"opsz" 24}
+.dtot{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-num);font-weight:800;font-size:clamp(17px,5vw,21px);pointer-events:none;padding:0 30%;text-align:center}
+.fab{position:absolute;right:16px;bottom:14px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 8px 20px rgba(108,92,231,.35)}
+.fab .mi{font-size:30px;font-variation-settings:"FILL" 1,"wght" 500,"GRAD" 0,"opsz" 24}
 
 /* category rows */
 .crows{padding:2px 6px 8px}
@@ -116,12 +104,12 @@ input{font:inherit;color:inherit}
 .trow.all span:nth-child(2){color:var(--green);font-weight:700}
 .trow:active,.op:active,.cmain:active{background:var(--surface2)}
 
-.ci{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+.ci{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;flex:none}
 .ci .mi{font-size:24px}
-.ci.sm{width:34px;height:34px}
+.ci.sm{width:36px;height:36px;border-radius:12px}
 .ci.sm .mi{font-size:19px}
 .ci.more{background:var(--surface2);color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--line)}
-.ci.acc{background:var(--green);color:var(--surface)}
+.ci.acc{background:var(--tag);color:var(--tag-ink)}
 
 /* operations */
 .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -176,7 +164,7 @@ input{font:inherit;color:inherit}
 .uline.bad{border-color:var(--exp)}
 .actions{display:flex;gap:10px;justify-content:center;margin-top:6px}
 .cta{min-width:min(240px,70%);background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:16px;padding:15px 24px;border-radius:999px}
-.dbtn{display:grid;place-items:center;padding:0 18px;border-radius:999px;background:var(--surface);color:var(--exp);font-weight:800;box-shadow:inset 0 0 0 1px var(--line)}
+.dbtn{white-space:nowrap;display:grid;place-items:center;padding:0 18px;border-radius:999px;background:var(--surface);color:var(--exp);font-weight:800;box-shadow:inset 0 0 0 1px var(--line)}
 .dbtn.armed{background:var(--exp);color:#fff;box-shadow:none}
 .namerow{display:flex;align-items:center;gap:12px}
 .radios{display:flex;gap:22px}
@@ -222,13 +210,14 @@ input{font:inherit;color:inherit}
 .scrim.on{opacity:1}
 #drawer{position:fixed;top:0;bottom:0;left:0;width:min(300px,82%);background:var(--head);color:var(--head-ink);z-index:31;transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto;padding:calc(16px + env(safe-area-inset-top,0px)) 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 #drawer.on{transform:none}
-.dh{display:flex;gap:12px;align-items:center;padding:8px 8px 18px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:8px}
+.dh{display:flex;gap:12px;align-items:center;padding:8px 8px 18px;border-bottom:1px solid var(--line);margin-bottom:8px}
 .dh b{display:block;font-size:17px}
 .dh span.num{font-size:13px;color:var(--head-muted)}
 .coin{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--f-num);font-weight:600;flex:none}
 #drawer-in>button{width:100%;display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;font-weight:600;color:var(--head-ink);text-align:left}
 #drawer-in>button .mi{color:var(--head-muted)}
-#drawer-in>button[aria-current="page"]{background:rgba(255,255,255,.1)}
+#drawer-in>button[aria-current="page"]{background:var(--tag);color:var(--tag-ink)}
+#drawer-in>button[aria-current="page"] .mi{color:var(--tag-ink)}
 #sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(100%);transition:transform .22s ease;max-height:88%;overflow-y:auto;overscroll-behavior:contain}
 #sscrim{z-index:40}
 #sheet.on{transform:none}
@@ -308,7 +297,7 @@ details.closed[open]>section{margin-top:10px}
 .login{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-block:calc(40px + env(safe-area-inset-top,0px)) 40px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .lhead{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:8px}
 .lmark{width:84px;height:84px;border-radius:22px;background:#1f2123;display:grid;place-items:center;box-shadow:var(--shadow)}
-.lhead h1{margin:6px 0 0;font-family:var(--f-num);font-weight:600;font-size:28px}
+.lhead h1{margin:6px 0 0;font-family:var(--f-num);font-weight:800;font-size:30px}
 .lhead p{margin:0;color:var(--muted);font-size:14px;max-width:34ch}
 .linkbtn.c{align-self:center}
 .linkbtn.muted{color:var(--muted);font-weight:600}
@@ -322,6 +311,24 @@ details.closed[open]>section{margin-top:10px}
 .acct>div{min-width:0;display:flex;flex-direction:column}
 .acct b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dacc{display:block;font-size:12px;color:var(--head-muted);margin-top:2px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* budget */
+.bud{padding:14px;display:flex;flex-direction:column;gap:10px;width:100%;text-align:left}
+.budh{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center}
+.budh>div{min-width:0;display:flex;flex-direction:column}
+.budh b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.budbar{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;position:relative}
+.budbar i{display:block;height:100%;border-radius:4px}
+.budbar s{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--muted);opacity:.35;text-decoration:none}
+.budf{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.budf b{color:var(--fg)}
+.st{font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.st.ok{background:#e6f7f4;color:#0b8a7c}.st.warn{background:#fff3df;color:#b26a00}.st.over{background:#ffe9ea;color:#c9353b}
+.banner.warn{background:#fff7e8;border-color:#ffd99a}
+.banner.over{background:#fff0f0;border-color:#ffc6c8}
+.bsum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.bsum span{display:flex;flex-direction:column;background:var(--surface);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow);min-width:0}
+.bsum small{color:var(--muted);font-size:12px}
+.bsum b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (prefers-reduced-motion:reduce){.scrim,#drawer,#sheet,.chev{transition:none}}
 
 /* standalone app: header runs under the status bar; base reset normally added by the artifact skeleton */
@@ -419,7 +426,7 @@ const LS="kopilka.v1";
 function migrateCats(c,txs){
   let out;
   if(!c||!Array.isArray(c.expense))out=JSON.parse(JSON.stringify(DEFAULT_CATS));
-  else{const fix=x=>({id:x.id,name:x.name,icon:OLD_ICON[x.icon]||x.icon||"help",color:x.color||"#8d8d8d",plan:Number(x.plan)||0});
+  else{const fix=x=>({id:x.id,name:x.name,icon:OLD_ICON[x.icon]||x.icon||"help",color:x.color||"#8d8d8d",plan:Number(x.plan)||0,warn:Number(x.warn)||80});
     const legacy=c.expense.some(x=>/^e-/.test(x.id))||(c.income||[]).some(x=>/^i-/.test(x.id));
     if(!legacy)out={expense:c.expense.map(fix),income:(c.income||DEFAULT_CATS.income).map(fix)};
     else{const used=new Set((txs||[]).map(t=>t.cat));out=JSON.parse(JSON.stringify(DEFAULT_CATS));
@@ -511,6 +518,8 @@ V.home=()=>{
   const reminds=S.events.filter(e=>e.kind==="remind"&&!e.done).length,auto=S.events.filter(e=>e.kind==="auto"&&!e.read).length;
   if(reminds||auto)banners.push(`<div class="banner info"><div><b>${reminds?`Пора оплатить: ${reminds}`:""}${reminds&&auto?" · ":""}${auto?`Списано автоматически: ${auto}`:""}</b>Регулярные платежи</div><button data-act="nav" data-v="events">Открыть</button></div>`);
   if(!S.balSet&&S.accounts.every(a=>!a.start&&!a.checkedAt))banners.unshift(`<div class="banner info"><div><b>Сколько у вас сейчас на счетах?</b>Укажите реальные остатки на карте и наличными, чтобы баланс совпадал.</div><button data-act="bal-setup">Указать</button></div>`);
+  {const hot=budgets().filter(b=>b.st!=="ok").sort((x,y)=>y.p-x.p);
+   if(hot.length){const top=hot[0];banners.unshift(`<div class="banner ${top.st}"><div><b>${top.st==="over"?"Превышен план":"Бюджет почти исчерпан"}: ${esc(top.c.name)} ${Math.round(top.p)}%</b>${money(top.v)} из ${money(top.c.plan)}${hot.length>1?` · ещё категорий: ${hot.length-1}`:""}</div><button data-act="nav" data-v="budget">Бюджет</button></div>`)}}
   const gaps=S.txs.length?gapDays(7):[];
   if(gaps.length>=2&&S.hint!==todayIso())banners.push(`<div class="banner"><div><b>Нет записей за ${gaps.length} дн. из последних 7</b>Сверьте счета, и станет видно, где не сходится.</div><div class="bbtns"><button data-act="nav" data-v="check">Сверить</button><button data-act="hide-hint">Скрыть</button></div></div>`);
   const showPlan=S.period==="month"&&S.kind==="expense";
@@ -710,6 +719,32 @@ V.events=()=>bar(backBtn,`<b class="t1">Уведомления</b>`,"")
   :`<p class="empty">Здесь будут уведомления о регулярных платежах: что списано автоматически и что пора оплатить.</p>`}
   <button class="addline" data-act="nav" data-v="regs">${mi("event_repeat","xs")}Регулярные платежи</button></div>`;
 
+/* ---- budget: monthly plans per expense category ---- */
+function monthRange(){const t=today0();const a=new Date(t.getFullYear(),t.getMonth(),1);return{from:iso(a),to:iso(new Date(t.getFullYear(),t.getMonth()+1,1)),a}}
+function spentThisMonth(catId){const r=monthRange();return sum(data().filter(t=>t.kind==="expense"&&t.cat===catId&&inR(t,r)))}
+function budgets(){return S.cats.expense.filter(c=>c.plan>0).map(c=>{const v=spentThisMonth(c.id),p=v/c.plan*100,w=c.warn||80;return{c,v,p,w,st:p>=100?"over":p>=w?"warn":"ok"}})}
+const stText=b=>b.st==="over"?"Превышено":b.st==="warn"?"Почти всё":"В норме";
+V.budget=()=>{const B=budgets().sort((x,y)=>y.p-x.p);const r=monthRange();const planT=sum(B,b=>b.c.plan),spT=sum(B,b=>b.v);
+  const t=today0(),left=new Date(t.getFullYear(),t.getMonth()+1,0).getDate()-t.getDate()+1;
+  return bar(backBtn,`<small>ОСТАЛОСЬ ПО ПЛАНУ · ${MONTHS[r.a.getMonth()].toUpperCase()}</small><b class="num">${money(Math.max(planT-spT,0))}</b>`,"")
+  +`<div class="page">${B.length?`<div class="bsum"><span><small>План</small><b class="num">${money(planT)}</b></span><span><small>Потрачено</small><b class="num">${money(spT)}</b></span><span><small>Дней осталось</small><b class="num">${left}</b></span></div>`
+    +B.map(b=>`<button class="card bud" data-act="bud-edit" data-id="${b.c.id}"><div class="budh">${ci(b.c,"sm")}<div><b>${esc(b.c.name)}</b><span class="sub">${money(b.v)} из ${money(b.c.plan)}</span></div><span class="st ${b.st}">${stText(b)} · ${Math.round(b.p)}%</span></div>
+      <div class="budbar"><i style="width:${Math.min(100,b.p).toFixed(1)}%;background:${b.st==="over"?"var(--exp)":b.st==="warn"?"var(--warn)":b.c.color}"></i><s style="left:${b.w}%"></s></div>
+      <div class="budf"><span>${b.v>b.c.plan?`Сверх плана: <b class="num">${money(b.v-b.c.plan)}</b>`:`Осталось: <b class="num">${money(b.c.plan-b.v)}</b>`}</span><span>Предупредить на ${b.w}%</span></div></button>`).join("")
+    :`<p class="empty">Задайте план на месяц для любой категории расходов, например «Кафе — 20 000 ₸». Приложение предупредит, когда потратите 80% или 90%.</p>`}
+  <button class="addline" data-act="bud-new">${mi("add","xs")}Добавить план</button>
+  <p class="note">План считается с 1-го числа каждого месяца. Переводы между своими счетами в расходы не входят.</p></div>`};
+let BD=null;
+function budSheet(err){const free=S.cats.expense.filter(c=>!(c.plan>0)||c.id===BD.cat);
+  openSheet(`<h2>${BD.edit?"План: "+esc(catOf("expense",BD.cat).name):"Новый план"}</h2>
+  ${BD.edit?"":`<div class="fld"><label class="lbl" for="b-cat">Категория</label>${sel("b-cat",free.map(c=>[c.id,c.name]),BD.cat)}</div>`}
+  <div class="fld"><label class="lbl" for="b-amount">Не тратить больше, ${code()} в месяц</label><input class="inp" id="b-amount" inputmode="decimal" placeholder="Например, 20000" value="${esc(BD.amount)}"></div>
+  <div class="fld"><span class="lbl">Предупредить, когда потрачено</span>${seg("bwarn",String(BD.warn),[["70","70%"],["80","80%"],["90","90%"]])}</div>
+  ${err?`<p class="err">${err}</p>`:""}
+  <div class="actions">${BD.edit?`<button class="dbtn" data-act="bud-del">Убрать план</button>`:""}<button class="cta" data-act="bud-save">Сохранить</button></div>`)}
+function budRead(){const a=$("#b-amount");if(a)BD.amount=a.value;const c=$("#b-cat");if(c)BD.cat=c.value}
+const saveCats=()=>remoteSet("cats",{type:"cats",expense:S.cats.expense,income:S.cats.income});
+
 V.charts=()=>{const ch=S.chart,t=today0();let B=[];
   if(ch.by==="month")for(let i=5;i>=0;i--){const a=new Date(t.getFullYear(),t.getMonth()-i,1);B.push({from:iso(a),to:iso(new Date(a.getFullYear(),a.getMonth()+1,1)),l:MSH[a.getMonth()],l2:a.getMonth()===0||i===5?String(a.getFullYear()):"",name:MONTHS[a.getMonth()]})}
   else if(ch.by==="week"){const m=addD(t,-((t.getDay()+6)%7));for(let i=7;i>=0;i--){const a=addD(m,-7*i);B.push({from:iso(a),to:iso(addD(a,7)),l:a.getDate()+" "+MSH[a.getMonth()],l2:"",name:"неделя с "+dShort(iso(a))})}}
@@ -755,7 +790,7 @@ function afterNav(){if(S.view==="events"&&S.events.some(e=>!e.read)){S.events.fo
 
 /* drawer */
 function renderDrawer(){const {tot}=balances(),n=unread();$("#drawer-in").innerHTML=`<div class="dh"><span class="coin"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15.5 3.2A9 9 0 1 0 20.8 16 7.2 7.2 0 0 1 15.5 3.2z" fill="currentColor"/></svg></span><div><b>Ризк</b><span class="num">Остаток: ${signed(tot)}</span>${PWA?`<span class="dacc">${S.user?"☁ "+esc(S.user.email):"Только на этом телефоне"}</span>`:""}</div></div>
-  ${[["home","home","Главная"],["ops-all","receipt_long","Операции"],["accounts","account_balance_wallet","Счета"],["check","fact_check","Сверка"],["ledger","groups","Ведомость"],["debts","handshake","Долги"],["regs","event_repeat","Регулярные платежи"],["events","notifications","Уведомления"],["charts","bar_chart","Графики"],["categories","category","Категории"],["settings","settings","Настройки"]].map(([v,i,l])=>`<button data-act="nav" data-v="${v}" ${S.view===v?'aria-current="page"':""}>${mi(i)}<span>${l}</span>${v==="events"&&n?`<i class="badge in">${n}</i>`:""}</button>`).join("")}`}
+  ${[["home","home","Главная"],["ops-all","receipt_long","Операции"],["accounts","account_balance_wallet","Счета"],["budget","savings","Бюджет"],["check","fact_check","Сверка"],["ledger","groups","Ведомость"],["debts","handshake","Долги"],["regs","event_repeat","Регулярные платежи"],["events","notifications","Уведомления"],["charts","bar_chart","Графики"],["categories","category","Категории"],["settings","settings","Настройки"]].map(([v,i,l])=>`<button data-act="nav" data-v="${v}" ${S.view===v?'aria-current="page"':""}>${mi(i)}<span>${l}</span>${v==="events"&&n?`<i class="badge in">${n}</i>`:""}</button>`).join("")}`}
 function openDrawer(){$("#drawer").hidden=$("#dscrim").hidden=false;requestAnimationFrame(()=>requestAnimationFrame(()=>{$("#drawer").classList.add("on");$("#dscrim").classList.add("on")}))}
 function closeDrawer(){$("#drawer").classList.remove("on");$("#dscrim").classList.remove("on");setTimeout(()=>{$("#drawer").hidden=$("#dscrim").hidden=true},220)}
 
@@ -907,9 +942,12 @@ const ACT={
     if(F.kind==="transfer"){if(!F.acc||!F.to){F.err="Выберите, откуда и куда перевод";render(true);return}if(F.acc===F.to){F.err="Счета перевода должны быть разными";render(true);return}
       tx={id:F.id||"t"+uid(),kind:"transfer",cat:"",amount:v,date:F.date,acc:"",from:F.acc,to:F.to,tag:F.tag,pay:F.tag?F.pay:"",note:F.note.trim(),ts:F.ts||Date.now()}}
     else tx={id:F.id||"t"+uid(),kind:F.kind,cat:F.cat,amount:v,date:F.date,acc:F.acc,from:"",to:"",tag:F.tag,pay:F.tag?F.pay:"",note:F.note.trim(),ts:F.ts||Date.now()};
+    const bc=tx.kind==="expense"&&S.cats.expense.find(c=>c.id===tx.cat&&c.plan>0);const before=bc?spentThisMonth(bc.id):0;
     const i=S.txs.findIndex(t=>t.id===tx.id);if(i>=0)S.txs[i]=tx;else S.txs.push(tx);if(tx.tag&&!S.tags.includes(tx.tag))S.tags.unshift(tx.tag);
+    let budMsg="";if(bc){const after=spentThisMonth(bc.id),pb=before/bc.plan*100,pa=after/bc.plan*100,w=bc.warn||80;
+      if(pa>=100&&pb<100)budMsg="«"+bc.name+"»: план на месяц превышен ("+Math.round(pa)+"%)";else if(pa>=w&&pb<w)budMsg="«"+bc.name+"»: потрачено "+Math.round(pa)+"% плана, осталось "+money(Math.max(bc.plan-after,0))}
     if(F.eventId){const e=S.events.find(x=>x.id===F.eventId);if(e)e.done=true}
-    saveLocal();if(tx.kind!=="transfer")S.kind=tx.kind;toast(F.id?"Изменения сохранены":tx.kind==="transfer"?"Перевод записан":"Операция добавлена");const ev=F.eventId;back();await remoteSet(tx.id,{type:"tx",...tx});if(ev)await saveEvents()},
+    saveLocal();if(tx.kind!=="transfer")S.kind=tx.kind;toast(budMsg||(F.id?"Изменения сохранены":tx.kind==="transfer"?"Перевод записан":"Операция добавлена"));const ev=F.eventId;back();await remoteSet(tx.id,{type:"tx",...tx});if(ev)await saveEvents()},
   "del-tx":async()=>{if(!F.armed){F.armed=true;render(true);return}const id=F.id;S.txs=S.txs.filter(t=>t.id!==id);saveLocal();toast("Операция удалена");back();await remoteDel(id)},
   repeat:()=>{F={...F,id:null,date:todayIso(),ts:null,armed:false,err:""};render(true);toast("Это копия на сегодня. Проверьте и нажмите «Добавить»")},
   "pick-cat":el=>{F.cat=el.dataset.id;back()},
@@ -1011,6 +1049,15 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("#sheet").hid
 $("#sscrim").onclick=closeSheet;$("#dscrim").onclick=closeDrawer;
 
 
+Object.assign(ACT,{
+  "bud-new":()=>{const free=S.cats.expense.filter(c=>!(c.plan>0));if(!free.length){toast("План уже есть у всех категорий");return}BD={edit:false,cat:free[0].id,amount:"",warn:80};budSheet()},
+  "bud-edit":el=>{const c=S.cats.expense.find(x=>x.id===el.dataset.id);BD={edit:true,cat:c.id,amount:String(c.plan).replace(".",","),warn:c.warn||80};budSheet()},
+  bwarn:el=>{budRead();BD.warn=Number(el.dataset.k);budSheet()},
+  "bud-save":async()=>{budRead();const v=evalAmt(BD.amount);if(!(v>0))return budSheet("Введите сумму больше нуля");
+    const c=S.cats.expense.find(x=>x.id===BD.cat);c.plan=v;c.warn=BD.warn;saveLocal();closeSheet();render(true);toast("План сохранён");await saveCats()},
+  "bud-del":async()=>{const c=S.cats.expense.find(x=>x.id===BD.cat);c.plan=0;saveLocal();closeSheet();render(true);toast("План убран");await saveCats()}
+});
+
 /* ================= storage: Claude account (artifact) or Firebase cloud (installed app) ================= */
 const FB_CONFIG={apiKey:"AIzaSyDf2UO1J7oH3gJo3Ggs4SDA7lkZBwWfpWQ",authDomain:"rizk-ff47c.firebaseapp.com",projectId:"rizk-ff47c",storageBucket:"rizk-ff47c.firebasestorage.app",messagingSenderId:"490047693966",appId:"1:490047693966:web:a506c5ccc9b4cfe17895df"};
 let col=null,fb=null,unsub=null,regsRan=false;
@@ -1102,8 +1149,6 @@ V.login=()=>`<div class="login"><div class="lhead"><span class="lmark">${moonSvg
   ${L.err?`<p class="err">${esc(L.err)}</p>`:""}
   <button class="cta wide" data-act="login-go" ${L.busy?"disabled":""}>${L.busy?"Подождите…":L.mode==="in"?"Войти":"Создать аккаунт"}</button>
   ${L.mode==="in"?`<button class="linkbtn c" data-act="login-reset">Забыли пароль?</button>`:""}
-  <div class="or"><span>или</span></div>
-  <button class="gbtn" data-act="login-google"><b>G</b>Войти через Google</button>
   <button class="linkbtn c muted" data-act="login-skip">Без аккаунта, только на этом телефоне</button>
   ${S.fbMissing?`<p class="note c">Сейчас нет связи с облаком. Подключитесь к интернету, чтобы войти.</p>`:""}</div>`;
 function moonSvg(sz){return `<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" aria-hidden="true"><path d="M14.6 2.6A9.4 9.4 0 1 0 21.4 16a7.6 7.6 0 0 1-6.8-13.4z" fill="#f2b636"/><path d="M18 5.2l.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z" fill="#52be7a"/></svg>`}
