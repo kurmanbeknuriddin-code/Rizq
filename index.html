@@ -495,7 +495,7 @@ function opRow(e,neutral){const t=e.t;const isTr=t.kind==="transfer";const c=isT
   const title=isTr&&!c.id.startsWith("__tr_")?accN(t.from)+" → "+accN(t.to):c.name;
   const a=accOf(t.acc);const showAcc=!isTr&&!S.acc&&a;
   const pill=t.tag||t.pay?`<span class="tagp">${esc(t.tag||"")}${t.tag&&t.pay?" · ":""}${t.pay?PAY[t.pay]||"":""}</span>`:"";
-  const sign=neutral?"":e.kind==="income"?"+":"";
+  const sign=neutral?"":e.kind==="income"?"+":"−";
   return `<button class="op" data-act="edit" data-id="${t.id}">${ci(c,"sm")}<span class="opm"><b>${esc(title)}</b>${showAcc?`<span class="sub">${esc(a.name)}</span>`:""}${pill}${t.note?`<span class="sub note">${esc(t.note)}</span>`:""}</span><span class="opv num ${neutral?"neutral":e.kind}">${sign}${money(t.amount)}</span></button>`}
 function dayGroups(list){const days=[];list.forEach(e=>{const l=days[days.length-1];if(l&&l.d===e.t.date)l.items.push(e);else days.push({d:e.t.date,items:[e]})});
   return days.map(g=>{const d=pd(g.d);return `<h3 class="dhead">${d.getDate()} ${MG[d.getMonth()]} ${d.getFullYear()} г. (${WD[d.getDay()]})</h3><div class="card list">${g.items.map(e=>opRow(e,e.neutral)).join("")}</div>`}).join("")}
@@ -542,17 +542,17 @@ V.home=()=>{
 
 function opsEntries(){const r=range(),o=S.ops;let list;
   if(o.all){list=data().filter(t=>inR(t,r)&&t.tag===o.tag&&(!S.acc||t.acc===S.acc||t.from===S.acc||t.to===S.acc)).map(t=>({t,kind:t.kind==="transfer"?"expense":t.kind,c:t.kind==="transfer"?TRC:catOf(t.kind,t.cat)}))}
-  else{list=proj(data()).filter(e=>inR(e.t,r)&&(o.cat?e.c.id===o.cat:e.kind===S.kind));
+  else{const k=S.opsKind||"all";list=proj(data()).filter(e=>inR(e.t,r)&&(o.cat?e.c.id===o.cat:k==="all"||e.kind===k));
     if(!S.acc&&!o.cat)list=list.concat(data().filter(t=>t.kind==="transfer"&&inR(t,r)).map(t=>({t,kind:"transfer",c:TRC,neutral:true})));
     if(o.tag)list=list.filter(e=>o.tag==="__none"?!e.t.tag:e.t.tag===o.tag)}
   const q=S.opsQ.trim().toLowerCase();
   if(q)list=list.filter(e=>(e.c.name+" "+e.t.tag+" "+e.t.note+" "+e.t.amount+" "+(PAY[e.t.pay]||"")).toLowerCase().includes(q));
   return list.sort(sortE)}
 V.ops=()=>{const o=S.ops;const cat=o.cat?catOf(S.kind,o.cat):null;const list=opsEntries();
-  const total=sum(list.filter(e=>!e.neutral),e=>e.t.amount);
+  const allK=!cat&&!o.all&&(S.opsKind||"all")==="all";const real=list.filter(e=>!e.neutral);const total=allK?sum(real,e=>e.kind==="income"?e.t.amount:-e.t.amount):sum(real,e=>e.t.amount);
   const title=o.all?o.tag.toUpperCase():cat?cat.name.toUpperCase():"ОПЕРАЦИИ";
   const chips=`<div class="filters"><button class="accchip" data-act="pick-acc">${mi("account_balance_wallet","xs")}${esc(accName())}${mi("arrow_drop_down","xs")}</button>${o.tag&&!o.all?`<button class="fchip" data-act="clear-tag">${mi("close","xs")}${o.tag==="__none"?"Без тегов":esc(o.tag)}</button>`:""}</div>`;
-  return bar(backBtn,`<small>${esc(title)}</small><b class="num">${money(total)}</b>`,`<div class="ibs"><button class="ib" data-act="ops-search" aria-label="Поиск">${mi("search")}</button><button class="ib" data-act="export" data-scope="period" aria-label="Выгрузить в Excel">${mi("download")}</button></div>`,cat||o.all?"":kindTabs(),true)
+  return bar(backBtn,`<small>${esc(title)}</small><b class="num">${allK?signed(total):money(total)}</b>`,`<div class="ibs"><button class="ib" data-act="ops-search" aria-label="Поиск">${mi("search")}</button><button class="ib" data-act="export" data-scope="period" aria-label="Выгрузить в Excel">${mi("download")}</button></div>`,cat||o.all?"":tabsHtml("okind",S.opsKind||"all",[["all","Все"],["expense","Расходы"],["income","Доходы"]],"three"),true)
   +`<div class="page">${chips}${S.opsSearch?`<input class="inp" id="ops-q" placeholder="Поиск по комментарию, тегу, сумме" value="${esc(S.opsQ)}" autocomplete="off">`:""}
    <section class="card">${periodBar()}</section>${!S.acc&&!cat&&!o.all&&list.some(e=>e.neutral)?`<p class="note">Переводы между счетами показаны серым и не входят в сумму «Итого».</p>`:""}
    ${list.length?dayGroups(list):`<p class="empty">Операций за этот период нет</p>`}</div>`};
@@ -910,7 +910,8 @@ const ACT={
   tcat:el=>{S.open[el.dataset.id]=!S.open[el.dataset.id];render(true)},
   ops:el=>{S.ops={cat:el.dataset.cat||null,tag:el.dataset.tag||null,all:false};S.opsQ="";S.opsSearch=false;go("ops")},
   "ops-tag":el=>{S.ops={cat:null,tag:el.dataset.tag,all:true};S.opsQ="";S.opsSearch=false;go("ops")},
-  "ops-all":()=>{S.ops={cat:null,tag:null,all:false};S.opsQ="";S.opsSearch=false;if(S.view==="ops")render();else go("ops")},
+  okind:el=>{S.opsKind=el.dataset.k;render(true)},
+  "ops-all":()=>{S.ops={cat:null,tag:null,all:false};S.opsKind="all";S.opsQ="";S.opsSearch=false;if(S.view==="ops")render();else go("ops")},
   "ops-search":()=>{S.opsSearch=!S.opsSearch;if(!S.opsSearch)S.opsQ="";render(true);if(S.opsSearch)$("#ops-q").focus()},
   "clear-tag":()=>{S.ops.tag=null;render(true)},
   export:el=>exportXlsx(el.dataset.scope),
@@ -947,7 +948,7 @@ const ACT={
     let budMsg="";if(bc){const after=spentThisMonth(bc.id),pb=before/bc.plan*100,pa=after/bc.plan*100,w=bc.warn||80;
       if(pa>=100&&pb<100)budMsg="«"+bc.name+"»: план на месяц превышен ("+Math.round(pa)+"%)";else if(pa>=w&&pb<w)budMsg="«"+bc.name+"»: потрачено "+Math.round(pa)+"% плана, осталось "+money(Math.max(bc.plan-after,0))}
     if(F.eventId){const e=S.events.find(x=>x.id===F.eventId);if(e)e.done=true}
-    saveLocal();if(tx.kind!=="transfer")S.kind=tx.kind;toast(budMsg||(F.id?"Изменения сохранены":tx.kind==="transfer"?"Перевод записан":"Операция добавлена"));const ev=F.eventId;back();await remoteSet(tx.id,{type:"tx",...tx});if(ev)await saveEvents()},
+    saveLocal();if(tx.kind!=="transfer")S.kind=tx.kind;toast(budMsg||(F.id?"Изменения сохранены":tx.kind==="transfer"?"Перевод: −"+money(tx.amount)+" в «"+accN(tx.from)+"», +"+money(tx.amount)+" в «"+accN(tx.to)+"»":"Операция добавлена"));const ev=F.eventId;back();await remoteSet(tx.id,{type:"tx",...tx});if(ev)await saveEvents()},
   "del-tx":async()=>{if(!F.armed){F.armed=true;render(true);return}const id=F.id;S.txs=S.txs.filter(t=>t.id!==id);saveLocal();toast("Операция удалена");back();await remoteDel(id)},
   repeat:()=>{F={...F,id:null,date:todayIso(),ts:null,armed:false,err:""};render(true);toast("Это копия на сегодня. Проверьте и нажмите «Добавить»")},
   "pick-cat":el=>{F.cat=el.dataset.id;back()},
