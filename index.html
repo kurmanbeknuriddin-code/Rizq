@@ -434,7 +434,7 @@ function migrateCats(c,txs){
   ["expense","income"].forEach(k=>REQUIRED[k].forEach(id=>{if(!out[k].some(c=>c.id===id)){const d=DEFAULT_CATS[k].find(c=>c.id===id);const oth=out[k].findIndex(c=>/^[xn]-other$/.test(c.id));if(oth>=0)out[k].splice(oth,0,{...d});else out[k].push({...d})}}));
   return out;
 }
-const fixTx=t=>({id:t.id,kind:t.kind==="income"||t.kind==="transfer"?t.kind:"expense",cat:t.cat||"",amount:Number(t.amount)||0,date:t.date,acc:t.acc||"",from:t.from||"",to:t.to||"",tag:t.tag||t.who||"",pay:t.pay||"",note:t.note||"",ts:t.ts||0});
+const fixTx=t=>({id:t.id,kind:t.kind==="income"||t.kind==="transfer"?t.kind:"expense",cat:t.cat||"",amount:Number(t.amount)||0,date:t.date,acc:t.acc||"",from:t.from||"",to:t.to||"",tag:t.tag||t.who||"",pay:t.pay||"",note:t.note||"",ts:t.ts||0,pair:t.pair||""});
 const fixAcc=a=>({id:a.id,name:a.name,icon:a.icon||(a.id==="a-cash"?"payments":a.id==="a-card"?"credit_card":"account_balance_wallet"),start:Number(a.start)||0,checkedAt:a.checkedAt||"",checkedBal:a.checkedBal==null?null:Number(a.checkedBal)});
 function loadLocal(){try{const d=JSON.parse(localStorage.getItem(LS)||"null");if(!d)return;
   if(Array.isArray(d.txs))S.txs=d.txs.map(fixTx);S.cats=migrateCats(d.cats,S.txs);
@@ -559,12 +559,15 @@ V.ops=()=>{const o=S.ops;const cat=o.cat?catOf(S.kind,o.cat):null;const list=ops
 
 /* ---- add / edit ---- */
 let F=null;
+const ck=()=>F.kind==="transfer"?"expense":F.kind;
 function newForm(tx,preset){
+  if(tx&&tx.pair){const o=S.txs.find(x=>x.pair===tx.pair&&x.kind==="expense"),n=S.txs.find(x=>x.pair===tx.pair&&x.kind==="income");
+    if(o&&n){F={id:tx.pair,pair:tx.pair,kind:"transfer",amount:String(o.amount).replace(".",","),acc:o.acc,to:n.acc,cat:o.cat,date:o.date,tag:o.tag||"",pay:o.pay||"",note:o.note||"",ts:o.ts};F.err="";F.calc=false;F.tagq="";F.tagSearch=false;F.armed=false;return}}
   if(tx)F={id:tx.id,kind:tx.kind,amount:String(tx.amount).replace(".",","),acc:tx.kind==="transfer"?tx.from:tx.acc||"",to:tx.to||"",cat:tx.cat||"",date:tx.date,tag:tx.tag||"",pay:tx.pay||"",note:tx.note||"",ts:tx.ts};
   else{F={id:null,kind:S.kind,amount:"",acc:S.acc||"",to:"",cat:null,date:todayIso(),tag:S.ops.tag&&S.ops.tag!=="__none"&&S.view==="ops"?S.ops.tag:"",pay:"",note:"",ts:null};
     if(S.view==="ops"&&S.ops.cat&&!S.ops.cat.startsWith("__tr_"))F.cat=S.ops.cat;
     if(preset)Object.assign(F,preset)}
-  if(F.kind!=="transfer"&&(!F.cat||!S.cats[F.kind].some(c=>c.id===F.cat)))F.cat=topCats(F.kind)[0].id;
+  if(!F.cat||!S.cats[ck()].some(c=>c.id===F.cat))F.cat=topCats(ck())[0].id;
   F.err="";F.calc=false;F.tagq="";F.tagSearch=false;F.armed=false}
 function topCats(k){const cnt={};S.txs.forEach(t=>{if(t.kind===k)cnt[t.cat]=(cnt[t.cat]||0)+1});
   return S.cats[k].map((c,i)=>({c,i})).sort((a,b)=>(cnt[b.c.id]||0)-(cnt[a.c.id]||0)||a.i-b.i).map(x=>x.c)}
@@ -573,7 +576,7 @@ function tagChips(){const q=F.tagq.trim().toLowerCase();const list=allTags().fil
   return list.map(n=>`<button class="tchip" data-act="ftag" data-n="${esc(n)}" aria-pressed="${F.tag===n}">${esc(n)}</button>`).join("")+`<button class="tchip add" data-act="add-tag">${mi("add","xs")}Добавить тег</button>`}
 const payChips=()=>F.tag?`<div class="fld" id="payfld"><span class="lbl">Выплата сотруднику</span><div class="tchips">${Object.entries(PAY).map(([k,l])=>`<button class="tchip" data-act="fpay" data-k="${k}" aria-pressed="${F.pay===k}">${l}</button>`).join("")}</div></div>`:"";
 V.add=()=>{const tr=F.kind==="transfer";
-  let top=tr?[]:topCats(F.kind).slice(0,7);if(!tr&&!top.some(c=>c.id===F.cat)){const c=S.cats[F.kind].find(c=>c.id===F.cat);if(c)top[6]=c}
+  let top=topCats(ck()).slice(0,7);if(!top.some(c=>c.id===F.cat)){const c=S.cats[ck()].find(c=>c.id===F.cat);if(c)top[6]=c}
   const t=today0(),days=[0,1,2].map(k=>addD(t,-k)),lbl=["сегодня","вчера","позавчера"];const other=!days.some(d=>iso(d)===F.date);
   const fd=d=>pad(d.getDate())+"."+pad(d.getMonth()+1);const a=accOf(F.acc),to=accOf(F.to);
   return bar(backBtn,`<b class="t1">${F.id?"Изменение операции":"Добавление операции"}</b>`,"",tabsHtml("fkind",F.kind,[["expense","Расходы"],["income","Доходы"],["transfer","Перевод"]],"three"))
@@ -582,9 +585,9 @@ V.add=()=>{const tr=F.kind==="transfer";
     ${F.calc?`<div class="calc">${["+","−","×","÷","⌫","="].map(k=>`<button data-act="calck" data-k="${k}">${k}</button>`).join("")}</div>`:""}
     ${F.err?`<p class="err">${F.err}</p>`:""}
     ${tr?`<div class="trrow"><div class="fld"><span class="lbl">Откуда</span><button class="linkv" data-act="pick-facc">${a?esc(a.name):"Выбрать"}</button></div>${mi("arrow_forward","trarrow")}<div class="fld"><span class="lbl">Куда</span><button class="linkv" data-act="pick-fto">${to?esc(to.name):"Выбрать"}</button></div></div>
-      <p class="note">В счёте «откуда» это будет расход, в счёте «куда» доход. В «Итого» перевод не считается расходом.</p>`
-    :`<div class="fld"><span class="lbl">Счёт</span><button class="linkv" data-act="pick-facc">${a?esc(a.name):"Не задан"}</button></div>
-    <div class="fld"><span class="lbl">Категории</span><div class="cgrid">${top.map(c=>`<button class="cpick" data-act="fcat" data-id="${c.id}" aria-pressed="${F.cat===c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="go" data-v="catpick"><span class="ci more">${mi("add")}</span><span>Ещё</span></button></div></div>`}
+      <p class="note">Запишется две операции: расход в «${a?esc(a.name):"откуда"}» и доход в «${to?esc(to.name):"куда"}», с одной категорией, тегом и комментарием.</p>`
+    :`<div class="fld"><span class="lbl">Счёт</span><button class="linkv" data-act="pick-facc">${a?esc(a.name):"Не задан"}</button></div>`}
+    ${`<div class="fld"><span class="lbl">Категории</span><div class="cgrid">${top.map(c=>`<button class="cpick" data-act="fcat" data-id="${c.id}" aria-pressed="${F.cat===c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="go" data-v="catpick"><span class="ci more">${mi("add")}</span><span>Ещё</span></button></div></div>`}
     <div class="dates">${days.map((d,i)=>`<button class="dchip" data-act="fdate" data-d="${iso(d)}" aria-pressed="${F.date===iso(d)}"><b>${fd(d)}</b><span>${lbl[i]}</span></button>`).join("")}${other?`<span class="dchip" aria-pressed="true"><b>${fd(pd(F.date))}</b><span>${WD[pd(F.date).getDay()]}</span></span>`:""}<label class="calbtn" aria-label="Выбрать дату">${mi("calendar_month")}<input type="date" id="f-date" value="${F.date}"></label></div>
     <div class="fld"><div class="lblrow"><span class="lbl">Теги</span><button class="ib2" data-act="ftag-search" aria-label="Найти тег">${mi("search")}</button></div>${F.tagSearch?`<input class="inp" id="f-tagq" placeholder="Найти тег" value="${esc(F.tagq)}" autocomplete="off">`:""}<div class="tchips" id="tchips">${tagChips()}</div></div>
     <div id="paywrap">${payChips()}</div>
@@ -593,9 +596,9 @@ V.add=()=>{const tr=F.kind==="transfer";
     ${F.id?`<button class="ghostbtn" data-act="repeat">${mi("replay","xs")}Повторить сегодня</button>`:""}
   </div>`};
 
-V.catpick=()=>{const q=(S.cq||"").trim().toLowerCase();const list=S.cats[F.kind].filter(c=>!q||c.name.toLowerCase().includes(q));
+V.catpick=()=>{const q=(S.cq||"").trim().toLowerCase();const list=S.cats[ck()].filter(c=>!q||c.name.toLowerCase().includes(q));
   return bar(backBtn,`<b class="t1">Добавить категорию</b>`,`<button class="ib" data-act="cq" aria-label="Поиск">${mi("search")}</button>`)
-  +`<div class="page">${S.cqOpen?`<input class="inp" id="cq" placeholder="Найти категорию" value="${esc(S.cq||"")}" autocomplete="off">`:""}<div class="cgrid big">${list.map(c=>`<button class="cpick" data-act="pick-cat" data-id="${c.id}" aria-pressed="${F.cat===c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="new-cat" data-k="${F.kind}"><span class="ci more">${mi("add")}</span><span>Создать</span></button></div></div>`};
+  +`<div class="page">${S.cqOpen?`<input class="inp" id="cq" placeholder="Найти категорию" value="${esc(S.cq||"")}" autocomplete="off">`:""}<div class="cgrid big">${list.map(c=>`<button class="cpick" data-act="pick-cat" data-id="${c.id}" aria-pressed="${F.cat===c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="new-cat" data-k="${ck()}"><span class="ci more">${mi("add")}</span><span>Создать</span></button></div></div>`};
 
 /* ---- category editor ---- */
 let C=null;
@@ -921,7 +924,7 @@ const ACT={
   "set-acc":el=>{S.acc=el.dataset.id||null;closeSheet();render(true)},
   add:()=>{if(S.view!=="ops")S.ops={cat:null,tag:null,all:false};newForm(null);go("add");setTimeout(()=>{const i=$("#f-amount");if(i)i.focus()},50)},
   edit:el=>{if(isSample()){toast("Это пример. Добавьте свою операцию через «+»");return}const t=S.txs.find(x=>x.id===el.dataset.id);if(t){newForm(t);go("add")}},
-  fkind:el=>{const k=el.dataset.k;if(k===F.kind)return;F.kind=k;if(k==="transfer"){F.cat="";if(F.to===F.acc)F.to=""}else if(!S.cats[k].some(c=>c.id===F.cat))F.cat=topCats(k)[0].id;F.err="";render(true)},
+  fkind:el=>{const k=el.dataset.k;if(k===F.kind)return;F.kind=k;if(k==="transfer"&&F.to===F.acc)F.to="";if(!S.cats[ck()].some(c=>c.id===F.cat))F.cat=topCats(ck())[0].id;F.err="";render(true)},
   calc:()=>{F.calc=!F.calc;render(true)},
   calck:el=>{const k=el.dataset.k;if(k==="⌫")F.amount=F.amount.slice(0,-1);else if(k==="="){const v=evalAmt(F.amount);F.err=isNaN(v)&&F.amount?"Не получилось посчитать. Проверьте выражение.":"";if(!isNaN(v))F.amount=String(v).replace(".",",")}else F.amount+=k;render(true)},
   "pick-facc":()=>accSheet("form"),
@@ -941,7 +944,14 @@ const ACT={
   "save-tx":async()=>{const v=evalAmt(F.amount);if(!(v>0)){F.err=F.amount?"Не получилось посчитать сумму. Проверьте её.":"Введите сумму больше нуля";render(true);return}
     let tx;
     if(F.kind==="transfer"){if(!F.acc||!F.to){F.err="Выберите, откуда и куда перевод";render(true);return}if(F.acc===F.to){F.err="Счета перевода должны быть разными";render(true);return}
-      tx={id:F.id||"t"+uid(),kind:"transfer",cat:"",amount:v,date:F.date,acc:"",from:F.acc,to:F.to,tag:F.tag,pay:F.tag?F.pay:"",note:F.note.trim(),ts:F.ts||Date.now()}}
+      const pid=F.pair||"p"+uid(),ts=F.ts||Date.now(),oc=catOf("expense",F.cat),ic=S.cats.income.find(c=>c.name.trim().toLowerCase()===oc.name.trim().toLowerCase());
+      const base={amount:v,date:F.date,from:"",to:"",tag:F.tag,pay:F.tag?F.pay:"",note:F.note.trim(),ts,pair:pid};
+      const pr=[{...base,id:pid+"_o",kind:"expense",cat:F.cat,acc:F.acc},{...base,id:pid+"_i",kind:"income",cat:ic?ic.id:F.cat,acc:F.to}];
+      const gone=S.txs.filter(t=>(F.pair&&t.pair===F.pair)||(F.id&&t.id===F.id)).map(t=>t.id).filter(id=>!pr.some(x=>x.id===id));
+      S.txs=S.txs.filter(t=>!gone.includes(t.id));pr.forEach(x=>{const i=S.txs.findIndex(t=>t.id===x.id);if(i>=0)S.txs[i]=x;else S.txs.push(x)});
+      if(F.tag&&!S.tags.includes(F.tag))S.tags.unshift(F.tag);saveLocal();S.kind="expense";
+      toast(F.id?"Изменения сохранены":"Записано: −"+money(v)+" «"+accN(F.acc)+"», +"+money(v)+" «"+accN(F.to)+"»");back();
+      for(const id of gone)await remoteDel(id);for(const x of pr)await remoteSet(x.id,{type:"tx",...x});return}
     else tx={id:F.id||"t"+uid(),kind:F.kind,cat:F.cat,amount:v,date:F.date,acc:F.acc,from:"",to:"",tag:F.tag,pay:F.tag?F.pay:"",note:F.note.trim(),ts:F.ts||Date.now()};
     const bc=tx.kind==="expense"&&S.cats.expense.find(c=>c.id===tx.cat&&c.plan>0);const before=bc?spentThisMonth(bc.id):0;
     const i=S.txs.findIndex(t=>t.id===tx.id);if(i>=0)S.txs[i]=tx;else S.txs.push(tx);if(tx.tag&&!S.tags.includes(tx.tag))S.tags.unshift(tx.tag);
@@ -949,8 +959,8 @@ const ACT={
       if(pa>=100&&pb<100)budMsg="«"+bc.name+"»: план на месяц превышен ("+Math.round(pa)+"%)";else if(pa>=w&&pb<w)budMsg="«"+bc.name+"»: потрачено "+Math.round(pa)+"% плана, осталось "+money(Math.max(bc.plan-after,0))}
     if(F.eventId){const e=S.events.find(x=>x.id===F.eventId);if(e)e.done=true}
     saveLocal();if(tx.kind!=="transfer")S.kind=tx.kind;toast(budMsg||(F.id?"Изменения сохранены":tx.kind==="transfer"?"Перевод: −"+money(tx.amount)+" в «"+accN(tx.from)+"», +"+money(tx.amount)+" в «"+accN(tx.to)+"»":"Операция добавлена"));const ev=F.eventId;back();await remoteSet(tx.id,{type:"tx",...tx});if(ev)await saveEvents()},
-  "del-tx":async()=>{if(!F.armed){F.armed=true;render(true);return}const id=F.id;S.txs=S.txs.filter(t=>t.id!==id);saveLocal();toast("Операция удалена");back();await remoteDel(id)},
-  repeat:()=>{F={...F,id:null,date:todayIso(),ts:null,armed:false,err:""};render(true);toast("Это копия на сегодня. Проверьте и нажмите «Добавить»")},
+  "del-tx":async()=>{if(!F.armed){F.armed=true;render(true);return}const ids=S.txs.filter(t=>t.id===F.id||(F.pair&&t.pair===F.pair)).map(t=>t.id);S.txs=S.txs.filter(t=>!ids.includes(t.id));saveLocal();toast(ids.length>1?"Обе операции перевода удалены":"Операция удалена");back();for(const id of ids)await remoteDel(id)},
+  repeat:()=>{F={...F,id:null,pair:"",date:todayIso(),ts:null,armed:false,err:""};render(true);toast("Это копия на сегодня. Проверьте и нажмите «Добавить»")},
   "pick-cat":el=>{F.cat=el.dataset.id;back()},
   cq:()=>{S.cqOpen=!S.cqOpen;if(!S.cqOpen)S.cq="";render(true);if(S.cqOpen)$("#cq").focus()},
   "new-cat":el=>{newCat(el.dataset.k,null);go("catnew");setTimeout(()=>{const i=$("#c-name");if(i)i.focus()},50)},
