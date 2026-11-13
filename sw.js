@@ -1,5 +1,5 @@
 // Ризк: keeps the app working without internet
-const V = "rizq-v3";
+const V = "rizq-v5";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 const LIBS = ["app", "auth", "firestore"].map(m => "https://www.gstatic.com/firebasejs/10.12.2/firebase-" + m + "-compat.js");
 self.addEventListener("install", e => {

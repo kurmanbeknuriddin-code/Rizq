@@ -146,6 +146,9 @@ input{font:inherit;color:inherit}
 .cpick{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 2px;border-radius:14px;font-size:12px;font-weight:600;text-align:center;min-width:0}
 .cpick>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cpick[aria-pressed="true"]{background:var(--surface)}
+.cpick{position:relative}.cpick .qn{position:absolute;top:2px;right:calc(50% - 30px);min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;font-style:normal;display:grid;place-items:center;line-height:1}
+.ptabs.st{margin:0}
+.lblrow .ghostbtn{padding:6px 10px;font-size:13px;border-radius:10px}
 .cpick[aria-pressed="true"] .ci{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
 .dates{display:flex;gap:8px;align-items:center;overflow-x:auto;scrollbar-width:none}
 .dchip{flex:none;display:flex;flex-direction:column;align-items:center;padding:6px 12px;border-radius:10px;min-width:64px}
@@ -417,7 +420,7 @@ const sum=(a,f=x=>x.amount)=>a.reduce((s,x)=>s+f(x),0);
 const S={txs:[],cats:JSON.parse(JSON.stringify(DEFAULT_CATS)),accounts:JSON.parse(JSON.stringify(DEFAULT_ACCS)),tags:[],debts:[],regs:[],events:[],currency:"₸",
   sampleHidden:false,hint:"",backupAt:"",skipLogin:false,syncedUid:"",cloudUid:"",pend:{},user:null,fbMissing:false,mode:"local",loaded:false,
   view:"home",stack:[],kind:"expense",period:"month",offset:0,custom:null,acc:null,open:{},
-  ops:{cat:null,tag:null,all:false},opsQ:"",opsSearch:false,chart:{tab:"all",by:"month"},catsKind:"expense",debtTab:"gave",chk:{}};
+  ops:{cat:null,tag:null,all:false},opsQ:"",opsSearch:false,chart:{tab:"all",by:"month"},catsKind:"expense",debtTab:"gave",chk:{},quick:{expense:[],income:[]},startPeriod:"month",startAcc:"",qKind:"expense",navTouched:false};
 const money=v=>nf.format(Math.round(v*100)/100)+" "+S.currency;
 const signed=v=>(v<0?"−":"")+money(Math.abs(v));
 const short=v=>Math.abs(v)>=1e6?nf.format(Math.round(v/1e4)/100)+" млн "+S.currency:money(v);
@@ -436,12 +439,30 @@ function migrateCats(c,txs){
 }
 const fixTx=t=>({id:t.id,kind:t.kind==="income"||t.kind==="transfer"?t.kind:"expense",cat:t.cat||"",amount:Number(t.amount)||0,date:t.date,acc:t.acc||"",from:t.from||"",to:t.to||"",tag:t.tag||t.who||"",pay:t.pay||"",note:t.note||"",ts:t.ts||0,pair:t.pair||""});
 const fixAcc=a=>({id:a.id,name:a.name,icon:a.icon||(a.id==="a-cash"?"payments":a.id==="a-card"?"credit_card":"account_balance_wallet"),start:Number(a.start)||0,checkedAt:a.checkedAt||"",checkedBal:a.checkedBal==null?null:Number(a.checkedBal)});
+/* old single "transfer" records -> two real operations: expense on the source, income on the target */
+function splitOldTransfers(){const old=S.txs.filter(t=>t.kind==="transfer");if(!old.length)return null;
+  const xc=S.cats.expense.find(c=>c.id==="x-transfer")||S.cats.expense.find(c=>/друг(ой|ого) сч/i.test(c.name))||S.cats.expense.find(c=>c.id==="x-other")||S.cats.expense[0];
+  const ic=S.cats.income.find(c=>c.name.trim().toLowerCase()===xc.name.trim().toLowerCase());
+  const add=[],del=old.map(t=>t.id);
+  old.forEach(t=>{const base={amount:t.amount,date:t.date,from:"",to:"",tag:t.tag,pay:t.pay,note:t.note,ts:t.ts,pair:t.id};
+    if(t.from)add.push({...base,id:t.id+"_o",kind:"expense",cat:xc.id,acc:t.from});
+    if(t.to)add.push({...base,id:t.id+"_i",kind:"income",cat:ic?ic.id:xc.id,acc:t.to})});
+  const ids=new Set(add.map(x=>x.id));S.txs=S.txs.filter(t=>t.kind!=="transfer"&&!ids.has(t.id)).concat(add);return{del,add}}
+async function pushSplit(r){if(!r)return;for(const id of r.del)await remoteDel(id);for(const x of r.add)await remoteSet(x.id,{type:"tx",...x})}
+const PERIODS=[["day","День"],["week","Неделя"],["month","Месяц"],["year","Год"]];
+const QMAX=11;
+function setPrefs(d){if(!d)return;if(d.quick&&typeof d.quick==="object")S.quick={expense:Array.isArray(d.quick.expense)?d.quick.expense:[],income:Array.isArray(d.quick.income)?d.quick.income:[]};
+  if(PERIODS.some(p=>p[0]===d.startPeriod))S.startPeriod=d.startPeriod;if(typeof d.startAcc==="string")S.startAcc=d.startAcc}
+function applyStart(){S.period=S.startPeriod||"month";S.offset=0;S.acc=S.startAcc&&accOf(S.startAcc)?S.startAcc:null}
+const prefsDoc=()=>({type:"prefs",currency:S.currency,quick:S.quick,startPeriod:S.startPeriod,startAcc:S.startAcc});
+const savePrefs=()=>remoteSet("prefs",prefsDoc());
+const quickOf=k=>(S.quick[k]||[]).map(id=>S.cats[k].find(c=>c.id===id)).filter(Boolean);
 function loadLocal(){try{const d=JSON.parse(localStorage.getItem(LS)||"null");if(!d)return;
-  if(Array.isArray(d.txs))S.txs=d.txs.map(fixTx);S.cats=migrateCats(d.cats,S.txs);
+  if(Array.isArray(d.txs))S.txs=d.txs.map(fixTx);S.cats=migrateCats(d.cats,S.txs);splitOldTransfers();
   if(Array.isArray(d.accounts)&&d.accounts.length)S.accounts=d.accounts.map(fixAcc);
   ["tags","debts","regs","events"].forEach(k=>{if(Array.isArray(d[k]))S[k]=d[k]});
-  if(d.currency)S.currency=d.currency;S.sampleHidden=!!d.sampleHidden;S.hint=d.hint||"";S.backupAt=d.backupAt||"";S.balSet=!!d.balSet;S.skipLogin=!!d.skipLogin;S.syncedUid=d.syncedUid||"";S.cloudUid=d.cloudUid||"";S.pend=d.pend&&typeof d.pend==="object"?d.pend:{}}catch(e){}}
-function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({txs:S.txs,cats:S.cats,accounts:S.accounts,tags:S.tags,debts:S.debts,regs:S.regs,events:S.events,currency:S.currency,sampleHidden:S.sampleHidden,hint:S.hint,backupAt:S.backupAt,balSet:S.balSet,skipLogin:S.skipLogin,syncedUid:S.syncedUid,cloudUid:S.cloudUid,pend:S.pend}))}catch(e){}}
+  if(d.currency)S.currency=d.currency;S.sampleHidden=!!d.sampleHidden;S.hint=d.hint||"";S.backupAt=d.backupAt||"";S.balSet=!!d.balSet;S.skipLogin=!!d.skipLogin;S.syncedUid=d.syncedUid||"";S.cloudUid=d.cloudUid||"";S.pend=d.pend&&typeof d.pend==="object"?d.pend:{};setPrefs(d)}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({txs:S.txs,cats:S.cats,accounts:S.accounts,tags:S.tags,debts:S.debts,regs:S.regs,events:S.events,currency:S.currency,sampleHidden:S.sampleHidden,hint:S.hint,backupAt:S.backupAt,balSet:S.balSet,skipLogin:S.skipLogin,syncedUid:S.syncedUid,cloudUid:S.cloudUid,pend:S.pend,quick:S.quick,startPeriod:S.startPeriod,startAcc:S.startAcc}))}catch(e){}}
 
 /* sample shown only while there are no real records */
 function sampleTxs(){const t=today0(),d=k=>iso(addD(t,-k));
@@ -569,14 +590,14 @@ function newForm(tx,preset){
     if(preset)Object.assign(F,preset)}
   if(!F.cat||!S.cats[ck()].some(c=>c.id===F.cat))F.cat=topCats(ck())[0].id;
   F.err="";F.calc=false;F.tagq="";F.tagSearch=false;F.armed=false}
-function topCats(k){const cnt={};S.txs.forEach(t=>{if(t.kind===k)cnt[t.cat]=(cnt[t.cat]||0)+1});
-  return S.cats[k].map((c,i)=>({c,i})).sort((a,b)=>(cnt[b.c.id]||0)-(cnt[a.c.id]||0)||a.i-b.i).map(x=>x.c)}
+function topCats(k){const cnt={};S.txs.forEach(t=>{if(t.kind===k)cnt[t.cat]=(cnt[t.cat]||0)+1});const q=quickOf(k);
+  return q.concat(S.cats[k].map((c,i)=>({c,i})).filter(x=>!q.includes(x.c)).sort((a,b)=>(cnt[b.c.id]||0)-(cnt[a.c.id]||0)||a.i-b.i).map(x=>x.c))}
 function tagChips(){const q=F.tagq.trim().toLowerCase();const list=allTags().filter(n=>!q||n.toLowerCase().includes(q));
   if(F.tag&&!list.includes(F.tag))list.unshift(F.tag);
   return list.map(n=>`<button class="tchip" data-act="ftag" data-n="${esc(n)}" aria-pressed="${F.tag===n}">${esc(n)}</button>`).join("")+`<button class="tchip add" data-act="add-tag">${mi("add","xs")}Добавить тег</button>`}
 const payChips=()=>F.tag?`<div class="fld" id="payfld"><span class="lbl">Выплата сотруднику</span><div class="tchips">${Object.entries(PAY).map(([k,l])=>`<button class="tchip" data-act="fpay" data-k="${k}" aria-pressed="${F.pay===k}">${l}</button>`).join("")}</div></div>`:"";
 V.add=()=>{const tr=F.kind==="transfer";
-  let top=topCats(ck()).slice(0,7);if(!top.some(c=>c.id===F.cat)){const c=S.cats[ck()].find(c=>c.id===F.cat);if(c)top[6]=c}
+  const qk=quickOf(ck());let top=qk.length?qk.slice(0,QMAX):topCats(ck()).slice(0,7);if(!top.some(c=>c.id===F.cat)){const c=S.cats[ck()].find(c=>c.id===F.cat);if(c)top[top.length-1]=c}
   const t=today0(),days=[0,1,2].map(k=>addD(t,-k)),lbl=["сегодня","вчера","позавчера"];const other=!days.some(d=>iso(d)===F.date);
   const fd=d=>pad(d.getDate())+"."+pad(d.getMonth()+1);const a=accOf(F.acc),to=accOf(F.to);
   return bar(backBtn,`<b class="t1">${F.id?"Изменение операции":"Добавление операции"}</b>`,"",tabsHtml("fkind",F.kind,[["expense","Расходы"],["income","Доходы"],["transfer","Перевод"]],"three"))
@@ -587,7 +608,7 @@ V.add=()=>{const tr=F.kind==="transfer";
     ${tr?`<div class="trrow"><div class="fld"><span class="lbl">Откуда</span><button class="linkv" data-act="pick-facc">${a?esc(a.name):"Выбрать"}</button></div>${mi("arrow_forward","trarrow")}<div class="fld"><span class="lbl">Куда</span><button class="linkv" data-act="pick-fto">${to?esc(to.name):"Выбрать"}</button></div></div>
       <p class="note">Запишется две операции: расход в «${a?esc(a.name):"откуда"}» и доход в «${to?esc(to.name):"куда"}», с одной категорией, тегом и комментарием.</p>`
     :`<div class="fld"><span class="lbl">Счёт</span><button class="linkv" data-act="pick-facc">${a?esc(a.name):"Не задан"}</button></div>`}
-    ${`<div class="fld"><span class="lbl">Категории</span><div class="cgrid">${top.map(c=>`<button class="cpick" data-act="fcat" data-id="${c.id}" aria-pressed="${F.cat===c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="go" data-v="catpick"><span class="ci more">${mi("add")}</span><span>Ещё</span></button></div></div>`}
+    ${`<div class="fld"><div class="lblrow"><span class="lbl">Категории</span><button class="ghostbtn" data-act="quick-open" data-k="${ck()}">${mi("edit","xs")}Настроить</button></div><div class="cgrid">${top.map(c=>`<button class="cpick" data-act="fcat" data-id="${c.id}" aria-pressed="${F.cat===c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="go" data-v="catpick"><span class="ci more">${mi("add")}</span><span>Ещё</span></button></div></div>`}
     <div class="dates">${days.map((d,i)=>`<button class="dchip" data-act="fdate" data-d="${iso(d)}" aria-pressed="${F.date===iso(d)}"><b>${fd(d)}</b><span>${lbl[i]}</span></button>`).join("")}${other?`<span class="dchip" aria-pressed="true"><b>${fd(pd(F.date))}</b><span>${WD[pd(F.date).getDay()]}</span></span>`:""}<label class="calbtn" aria-label="Выбрать дату">${mi("calendar_month")}<input type="date" id="f-date" value="${F.date}"></label></div>
     <div class="fld"><div class="lblrow"><span class="lbl">Теги</span><button class="ib2" data-act="ftag-search" aria-label="Найти тег">${mi("search")}</button></div>${F.tagSearch?`<input class="inp" id="f-tagq" placeholder="Найти тег" value="${esc(F.tagq)}" autocomplete="off">`:""}<div class="tchips" id="tchips">${tagChips()}</div></div>
     <div id="paywrap">${payChips()}</div>
@@ -620,6 +641,12 @@ V.icons=()=>bar(backBtn,`<b class="t1">Каталог иконок</b>`,"")+`<di
 
 V.categories=()=>bar(backBtn,`<b class="t1">Категории</b>`,"",kindTabs("ckinds",S.catsKind))
   +`<div class="page"><p class="note">Нажмите на категорию, чтобы изменить название, план, иконку или цвет.</p><div class="cgrid big">${S.cats[S.catsKind].map(c=>`<button class="cpick" data-act="edit-cat" data-id="${c.id}">${ci(c)}<span>${esc(c.name)}</span></button>`).join("")}<button class="cpick" data-act="new-cat" data-k="${S.catsKind}"><span class="ci more">${mi("add")}</span><span>Создать</span></button></div></div>`;
+
+V.quickcats=()=>{const k=S.qKind,q=S.quick[k]||[];
+  return bar(backBtn,`<b class="t1">Быстрые категории</b>`,"",kindTabs("qkinds",k))
+  +`<div class="page"><p class="note">Отметьте категории, которые должны сразу стоять в окне добавления операции, без кнопки «Ещё». Цифра — их порядок. Можно выбрать до ${QMAX}. Если ничего не выбрано, приложение само ставит самые частые.</p>
+  <div class="cgrid big">${S.cats[k].map(c=>{const n=q.indexOf(c.id);return `<button class="cpick" data-act="quick-tog" data-id="${c.id}" aria-pressed="${n>=0}">${ci(c)}${n>=0?`<i class="qn">${n+1}</i>`:""}<span>${esc(c.name)}</span></button>`}).join("")}</div>
+  ${q.length?`<button class="addline" data-act="quick-clear">${mi("replay","xs")}Сбросить: снова самые частые</button>`:""}</div>`};
 
 V.accounts=()=>{const {b,tot}=balances();
   return bar(backBtn,`<small>СЧЕТА</small><b class="num">${signed(tot)}</b>`,"")
@@ -777,7 +804,10 @@ V.charts=()=>{const ch=S.chart,t=today0();let B=[];
 function niceStep(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
 function axis(v){const a=Math.abs(v);return (v<0?"−":"")+(a>=1e6?nf.format(a/1e6)+"м":a>=1e3?nf.format(a/1e3)+"к":nf.format(a))}
 
-V.settings=()=>bar(backBtn,`<b class="t1">Настройки</b>`,"")+`<div class="page">${PWA?`<h3 class="dhead">Аккаунт</h3>${S.user?`<div class="card acct"><span class="ci sm acc">${mi("person")}</span><div><b>${esc(S.user.name||S.user.email)}</b><span class="sub">${esc(S.user.email)} · облако подключено</span></div><button class="ghostbtn" data-act="logout">Выйти</button></div>`:`<button class="addline" data-act="login-open">${mi("person","xs")}Войти, чтобы хранить записи в облаке</button>`}`:""}<h3 class="dhead">Валюта</h3><div class="card list">${CURRENCIES.map(([s,n,c])=>`<button class="op opt" data-act="cur" data-s="${s}" aria-pressed="${S.currency===s}"><span class="opm"><b>${n}</b><span class="sub">${c}</span></span><span class="opv">${s}${S.currency===s?mi("check","xs"):""}</span></button>`).join("")}</div>
+V.settings=()=>bar(backBtn,`<b class="t1">Настройки</b>`,"")+`<div class="page">${PWA?`<h3 class="dhead">Аккаунт</h3>${S.user?`<div class="card acct"><span class="ci sm acc">${mi("person")}</span><div><b>${esc(S.user.name||S.user.email)}</b><span class="sub">${esc(S.user.email)} · облако подключено</span></div><button class="ghostbtn" data-act="logout">Выйти</button></div>`:`<button class="addline" data-act="login-open">${mi("person","xs")}Войти, чтобы хранить записи в облаке</button>`}`:""}<h3 class="dhead">При открытии приложения</h3><div class="card" style="padding:12px;display:flex;flex-direction:column;gap:12px"><span class="sub">Период</span><div class="ptabs st" role="tablist">${PERIODS.map(([k,l])=>`<button data-act="start-per" data-p="${k}" aria-pressed="${S.startPeriod===k}">${l}</button>`).join("")}</div>
+  <span class="sub">Счёт</span><div class="tchips"><button class="tchip" data-act="start-acc" data-id="" aria-pressed="${!S.startAcc||!accOf(S.startAcc)}">Итого</button>${S.accounts.map(a=>`<button class="tchip" data-act="start-acc" data-id="${a.id}" aria-pressed="${S.startAcc===a.id}">${esc(a.name)}</button>`).join("")}</div></div>
+  <h3 class="dhead">Категории</h3><button class="addline" data-act="quick-open" data-k="expense">${mi("star","xs")}Быстрые категории при добавлении</button>
+  <h3 class="dhead">Валюта</h3><div class="card list">${CURRENCIES.map(([s,n,c])=>`<button class="op opt" data-act="cur" data-s="${s}" aria-pressed="${S.currency===s}"><span class="opm"><b>${n}</b><span class="sub">${c}</span></span><span class="opv">${s}${S.currency===s?mi("check","xs"):""}</span></button>`).join("")}</div>
   <h3 class="dhead">Выгрузка</h3><button class="addline" data-act="export" data-scope="all">${mi("download","xs")}Выгрузить всё в Excel</button>
   <h3 class="dhead">Резервная копия</h3><div class="row2"><button class="addline" data-act="backup">${mi("save","xs")}Сохранить копию</button><label class="addline">${mi("upload_file","xs")}Восстановить<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
   <p class="note">Копия — это один файл со всеми операциями, счетами, категориями, долгами и платежами. Через него данные переносятся между этой версией${PWA?" и версией в Claude":" и офлайн-версией"} или на новый телефон.${S.backupAt?" Последняя копия: "+dShort(S.backupAt.slice(0,10))+".":""}</p>
@@ -873,13 +903,13 @@ function importFile(f){const rd=new FileReader();rd.onload=()=>{let d;try{d=JSON
   rd.onerror=()=>toast("Не удалось прочитать файл.");rd.readAsText(f)}
 async function applyImport(){const d=IMP;IMP=null;closeSheet();
   const old={tx:S.txs.map(t=>t.id),debt:S.debts.map(x=>"debt_"+x.id),reg:S.regs.map(x=>"reg_"+x.id)};
-  S.txs=d.txs.map(fixTx);S.cats=migrateCats(d.cats,S.txs);if(Array.isArray(d.accounts)&&d.accounts.length)S.accounts=d.accounts.map(fixAcc);
+  S.txs=d.txs.map(fixTx);S.cats=migrateCats(d.cats,S.txs);splitOldTransfers();if(Array.isArray(d.accounts)&&d.accounts.length)S.accounts=d.accounts.map(fixAcc);
   S.tags=d.tags||[];S.debts=d.debts||[];S.regs=d.regs||[];S.events=d.events||[];if(d.currency)S.currency=d.currency;S.sampleHidden=true;S.acc=null;
   saveLocal();render(true);toast("Данные восстановлены");
   if(col){const keep=new Set(S.txs.map(t=>t.id).concat(S.debts.map(x=>"debt_"+x.id),S.regs.map(x=>"reg_"+x.id)));
     for(const id of old.tx.concat(old.debt,old.reg))if(!keep.has(id))await remoteDel(id);
     for(const t of S.txs)await remoteSet(t.id,{type:"tx",...t});for(const x of S.debts)await remoteSet("debt_"+x.id,{type:"debt",...x});for(const x of S.regs)await remoteSet("reg_"+x.id,{type:"reg",...x});
-    await remoteSet("cats",{type:"cats",expense:S.cats.expense,income:S.cats.income});await remoteSet("accounts",{type:"accounts",list:S.accounts});await remoteSet("tags",{type:"tags",list:S.tags});await saveEvents();await remoteSet("prefs",{type:"prefs",currency:S.currency})}
+    await remoteSet("cats",{type:"cats",expense:S.cats.expense,income:S.cats.income});await remoteSet("accounts",{type:"accounts",list:S.accounts});await remoteSet("tags",{type:"tags",list:S.tags});await saveEvents();await savePrefs()}
   runRegs()}
 async function exportXlsx(scope){
   const dl=await getDl();if(!dl)return;
@@ -908,7 +938,7 @@ const ACT={
   "hide-sample":()=>{S.sampleHidden=true;saveLocal();render(true)},
   "hide-hint":()=>{S.hint=todayIso();saveLocal();render(true)},
   kind:el=>{S.kind=el.dataset.k;S.open={};render(true)},
-  period:el=>{S.period=el.dataset.p;S.offset=0;render(true)},
+  period:el=>{S.period=el.dataset.p;S.offset=0;S.navTouched=true;render(true)},
   shift:el=>{const d=+el.dataset.d;if(d>0&&S.offset>=0)return;S.offset+=d;render(true)},
   tcat:el=>{S.open[el.dataset.id]=!S.open[el.dataset.id];render(true)},
   ops:el=>{S.ops={cat:el.dataset.cat||null,tag:el.dataset.tag||null,all:false};S.opsQ="";S.opsSearch=false;go("ops")},
@@ -921,7 +951,7 @@ const ACT={
   backup:()=>doBackup(),
   "imp-ok":()=>applyImport(),
   "pick-acc":()=>accSheet("home"),
-  "set-acc":el=>{S.acc=el.dataset.id||null;closeSheet();render(true)},
+  "set-acc":el=>{S.acc=el.dataset.id||null;S.navTouched=true;closeSheet();render(true)},
   add:()=>{if(S.view!=="ops")S.ops={cat:null,tag:null,all:false};newForm(null);go("add");setTimeout(()=>{const i=$("#f-amount");if(i)i.focus()},50)},
   edit:el=>{if(isSample()){toast("Это пример. Добавьте свою операцию через «+»");return}const t=S.txs.find(x=>x.id===el.dataset.id);if(t){newForm(t);go("add")}},
   fkind:el=>{const k=el.dataset.k;if(k===F.kind)return;F.kind=k;if(k==="transfer"&&F.to===F.acc)F.to="";if(!S.cats[ck()].some(c=>c.id===F.cat))F.cat=topCats(ck())[0].id;F.err="";render(true)},
@@ -966,6 +996,13 @@ const ACT={
   "new-cat":el=>{newCat(el.dataset.k,null);go("catnew");setTimeout(()=>{const i=$("#c-name");if(i)i.focus()},50)},
   "edit-cat":el=>{const c=S.cats[S.catsKind].find(x=>x.id===el.dataset.id);if(c){newCat(S.catsKind,c);go("catnew")}},
   ckinds:el=>{S.catsKind=el.dataset.k;render(true)},
+  qkinds:el=>{S.qKind=el.dataset.k;render(true)},
+  "quick-open":el=>{S.qKind=el.dataset.k||"expense";go("quickcats")},
+  "quick-tog":async el=>{const k=S.qKind,id=el.dataset.id,q=(S.quick[k]||[]).filter(x=>S.cats[k].some(c=>c.id===x));const i=q.indexOf(id);
+    if(i>=0)q.splice(i,1);else{if(q.length>=QMAX){toast("Можно выбрать до "+QMAX+" категорий");return}q.push(id)}S.quick[k]=q;saveLocal();render(true);await savePrefs()},
+  "quick-clear":async()=>{S.quick[S.qKind]=[];saveLocal();render(true);await savePrefs()},
+  "start-per":async el=>{S.startPeriod=el.dataset.p;saveLocal();render(true);await savePrefs()},
+  "start-acc":async el=>{S.startAcc=el.dataset.id||"";saveLocal();render(true);await savePrefs()},
   ckind:el=>{if(C.id)return toast("Тип существующей категории менять нельзя");C.kind=el.dataset.k;render(true)},
   cicon:el=>{C.icon=el.dataset.i;render(true)},
   "pick-icon":el=>{C.icon=el.dataset.i;back()},
@@ -1034,7 +1071,7 @@ const ACT={
   "ev-skip":async el=>{const e=S.events.find(x=>x.id===el.dataset.id);e.done=true;e.skipped=true;saveLocal();render(true);await saveEvents()},
   ctab:el=>{S.chart.tab=el.dataset.k;render(true)},
   cby:el=>{S.chart.by=el.dataset.k;render(true)},
-  cur:async el=>{S.currency=el.dataset.s;saveLocal();render(true);await remoteSet("prefs",{type:"prefs",currency:S.currency})}
+  cur:async el=>{S.currency=el.dataset.s;saveLocal();render(true);await savePrefs()}
 };
 function readDebt(){const g=id=>{const e=$("#"+id);return e?e.value:""};D.person=g("d-person");D.amount=g("d-amount");D.acc=g("d-acc");D.date=g("d-date");D.note=g("d-note")}
 function readReg(){const g=(id,k)=>{const e=$("#"+id);if(e)R[k]=e.value};g("r-name","name");g("r-amount","amount");g("r-cat","cat");g("r-acc","acc");g("r-tag","tag");g("r-day","day");g("r-wd","wd");g("r-start","start")}
@@ -1099,12 +1136,12 @@ function remoteDel(id){
 
 function readSnap(snap){const o={txs:[],debts:[],regs:[],cats:null,cur:null,accs:null,tags:null,events:null,ids:new Set()};
   snap.docs.forEach(d=>{o.ids.add(d.id);const v=d.data();if(!v)return;
-    if(v.type==="tx")o.txs.push(fixTx({...v,id:v.id||d.id}));else if(v.type==="cats")o.cats=v;else if(v.type==="prefs")o.cur=v.currency;
+    if(v.type==="tx")o.txs.push(fixTx({...v,id:v.id||d.id}));else if(v.type==="cats")o.cats=v;else if(v.type==="prefs"){o.cur=v.currency;o.prefs=v}
     else if(v.type==="accounts"&&Array.isArray(v.list)&&v.list.length)o.accs=v.list;else if(v.type==="tags"&&Array.isArray(v.list))o.tags=v.list;
     else if(v.type==="events"&&Array.isArray(v.list))o.events=v.list;else if(v.type==="debt"){const{type,...x}=v;o.debts.push(x)}else if(v.type==="reg"){const{type,...x}=v;o.regs.push(x)}});
   return o}
-function applyCloud(o){S.loaded=true;S.txs=o.txs;S.debts=o.debts;S.regs=o.regs;S.cats=migrateCats(o.cats||S.cats,o.txs);if(o.cur)S.currency=o.cur;if(o.accs)S.accounts=o.accs.map(fixAcc);if(o.tags)S.tags=o.tags;if(o.events)S.events=o.events;
-  if(S.txs.length)S.sampleHidden=true;saveLocal();
+function applyCloud(o){S.loaded=true;S.txs=o.txs;S.debts=o.debts;S.regs=o.regs;S.cats=migrateCats(o.cats||S.cats,o.txs);const sp=splitOldTransfers();if(o.cur)S.currency=o.cur;if(o.prefs){const was=S.startPeriod+"|"+S.startAcc;setPrefs(o.prefs);if(!S.navTouched&&was!==S.startPeriod+"|"+S.startAcc)applyStart()}if(o.accs)S.accounts=o.accs.map(fixAcc);if(o.tags)S.tags=o.tags;if(o.events)S.events=o.events;
+  if(S.txs.length)S.sampleHidden=true;saveLocal();if(sp)setTimeout(()=>pushSplit(sp),0);
   const typing=document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)||!$("#sheet").hidden;if(!typing&&S.view!=="login")render(true);
   runRegsOnce()}
 /* send to the cloud whatever is on this phone and missing there */
@@ -1116,12 +1153,12 @@ function uploadMissing(ids){
   if(!ids.has("accounts"))remoteSet("accounts",{type:"accounts",list:S.accounts});
   if(!ids.has("tags"))remoteSet("tags",{type:"tags",list:S.tags});
   if(!ids.has("events"))saveEvents();
-  if(!ids.has("prefs"))remoteSet("prefs",{type:"prefs",currency:S.currency})}
+  if(!ids.has("prefs"))savePrefs()}
 function mergeLocal(o){const m={...o};
   m.txs=o.txs.concat(S.txs.filter(t=>!o.ids.has(t.id)));
   m.debts=o.debts.concat(S.debts.filter(d=>!o.ids.has("debt_"+d.id)));
   m.regs=o.regs.concat(S.regs.filter(r=>!o.ids.has("reg_"+r.id)));
-  m.cats=o.cats||{expense:S.cats.expense,income:S.cats.income};m.accs=o.accs||S.accounts;m.tags=o.tags||S.tags;m.events=o.events||S.events;m.cur=o.cur||S.currency;return m}
+  m.cats=o.cats||{expense:S.cats.expense,income:S.cats.income};m.accs=o.accs||S.accounts;m.tags=o.tags||S.tags;m.events=o.events||S.events;m.cur=o.cur||S.currency;if(!o.prefs)m.prefs={quick:S.quick,startPeriod:S.startPeriod,startAcc:S.startAcc};return m}
 
 /* ---- Firebase (installed app) ---- */
 function startCloud(uid){
@@ -1187,7 +1224,7 @@ Object.assign(ACT,{
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.target.id==="l-pass"||e.target.id==="l-email"))ACT["login-go"]()});
 
 /* ---- start ---- */
-loadLocal();
+loadLocal();applyStart();
 if(PWA){if(!S.skipLogin&&!S.cloudUid&&!S.txs.length)S.view="login";render();
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFirebase);else initFirebase();
   setTimeout(()=>loadXlsx().catch(()=>{}),3000)}
